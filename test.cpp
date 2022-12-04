@@ -55,17 +55,49 @@ int main()
 
     init(Register , Memory);
     readAsmCode(asm_code_list);
+    vector<instruction> is( asm_code_list.size() );
+    vector<string> asm_code( asm_code_list.size() );
 
     // decode("add $4, $8, $9");
     // decode("lw $4, 20($8)");
-    instruction is;
-    string asm_code;
-    asm_code = IF(&PC , asm_code_list.begin());
-    is = ID(asm_code, Register);
-    is = EX(is);
-    is = MEM(is , Memory);
-    is = WB(is , Register);
-    // cout << asm_code<<endl;
+    // instruction is;
+    for(int i=0; i<asm_code_list.size()+4; i++){
+        cout<<endl << "cycle" << i<<endl;
+
+        if(i == 0){
+            asm_code[i] = IF(&PC, asm_code_list.begin());
+
+        }else if(i == 1){
+            is[i - 1] = ID(asm_code[i - 1], Register);
+            asm_code[i] = IF(&PC, asm_code_list.begin());
+
+        }else if(i == 2){
+            is[i - 2] = EX(is[i - 2]);
+            is[i - 1] = ID(asm_code[i - 1], Register);
+            asm_code[i] = IF(&PC, asm_code_list.begin());
+
+        }else if(i == 3){
+            is[i - 3] = MEM(is[i], Memory);
+            is[i - 2] = EX(is[i - 2]);
+            is[i - 1] = ID(asm_code[i - 1], Register);
+            asm_code[i] = IF(&PC, asm_code_list.begin());
+
+        }else{
+            is[i - 4] = WB(is[i], Register);
+            is[i - 3] = MEM(is[i], Memory);
+            is[i - 2] = EX(is[i - 2]);
+            is[i - 1] = ID(asm_code[i - 1], Register);
+            asm_code[i] = IF(&PC, asm_code_list.begin());
+        }
+        
+    }
+
+    // asm_code = IF(&PC, asm_code_list.begin());
+    // is = ID(asm_code, Register);
+    // is = EX(is);
+    // is = MEM(is, Memory);
+    // is = WB(is, Register);
+    // cout << asm_code << endl;
 
     return 0;
 }
@@ -81,7 +113,7 @@ void init(int32_t* reg , int32_t* memory)
 
 }
 
-void readAsmCode(vector<string>&asm_code_list)
+void readAsmCode(vector<string> &asm_code_list)
 {
     string asm_code;
     while( getline(cin , asm_code ) )
