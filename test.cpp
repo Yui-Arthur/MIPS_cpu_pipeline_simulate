@@ -65,14 +65,16 @@ int main()
     instruction EX_MEM;
     instruction MEM_WB;
 
-    for(int cycle=0; cycle<asm_code_list.size()+4; cycle++){
+    
+
+    for(int cycle = 1; cycle <= asm_code_list.size()+4; cycle++){
 
         IF_ID = IF(&PC, asm_code_list.begin());
         ID_EX = ID(IF_ID , Register);
         EX_MEM = EX(ID_EX);
         MEM_WB = MEM(EX_MEM , Memory);
         WB(MEM_WB , Register);
-
+        
     }
 
     // asm_code = IF(&PC, asm_code_list.begin());
