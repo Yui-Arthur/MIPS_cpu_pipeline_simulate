@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <vector>
 
 using namespace std;
 struct instruction{
@@ -28,7 +29,7 @@ struct instruction{
 
 };
 void init(int* reg , int* memory);
-string IF();
+string IF(int32_t *PC , vector<string>::iterator asm_code_list);
 instruction ID(string asm_code , int32_t * reg);
 instruction EX(instruction is);
 instruction MEM(instruction is , int32_t * mem);
@@ -38,6 +39,7 @@ void R_format(string &operation , string code , instruction *ret );
 void branch(string &operation , string code , instruction *ret );
 int stringToInt(string &s , bool is_reg);
 void print_stats(string state , instruction is);
+void readAsmCode(vector<string>&asm_code_list);
 
 
 
@@ -48,14 +50,17 @@ int main()
 
     int32_t Register[32];
     int32_t Memory[32];
+    vector<string> asm_code_list;
+    int32_t PC = 0;
 
     init(Register , Memory);
+    readAsmCode(asm_code_list);
 
     // decode("add $4, $8, $9");
     // decode("lw $4, 20($8)");
     instruction is;
     string asm_code;
-    asm_code = IF();
+    asm_code = IF(&PC , asm_code_list.begin());
     is = ID(asm_code, Register);
     is = EX(is);
     is = MEM(is , Memory);
@@ -65,7 +70,7 @@ int main()
     return 0;
 }
 
-void init(int* reg , int* memory)
+void init(int32_t* reg , int32_t* memory)
 {
     for(int i = 1; i < 32; i++)
        reg[i] = 1 , memory[i] = 1;
@@ -76,13 +81,21 @@ void init(int* reg , int* memory)
 
 }
 
-string IF()
+void readAsmCode(vector<string>&asm_code_list)
 {
     string asm_code;
-    // getline(cin, asm_code);
-    // return asm_code;
+    while( getline(cin , asm_code ) )
+        asm_code_list.push_back(asm_code);
+    
+    return;
+}
 
-    return "lw $4, 20($8)";
+string IF(int32_t *PC , vector<string>::iterator asm_code_list)
+{
+    string asm_code = *(asm_code_list + *PC);
+    *PC += 1;
+
+    return asm_code ;
     
 }
 
