@@ -59,13 +59,19 @@ int main()
     // decode("add $4, $8, $9");
     // decode("lw $4, 20($8)");
     instruction is;
-    string asm_code;
-    asm_code = IF(&PC , asm_code_list.begin());
-    is = ID(asm_code, Register);
-    is = EX(is);
-    is = MEM(is , Memory);
-    is = WB(is , Register);
-    print_stats(1 , is);
+    // string asm_code;
+    int cycles = 1;
+
+    for(auto asm_code : asm_code_list)
+    {
+        asm_code = IF(&PC , asm_code_list.begin());
+        is = ID(asm_code, Register);
+        is = EX(is);
+        is = MEM(is , Memory);
+        is = WB(is , Register);
+        print_stats(cycles++ , is);
+    }
+    
     // cout << asm_code<<endl;
 
     return 0;
