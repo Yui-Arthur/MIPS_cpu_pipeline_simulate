@@ -70,10 +70,10 @@ void init(int* reg , int* memory)
 string IF()
 {
     string asm_code;
-    // getline(cin, asm_code);
-    // return asm_code;
+    getline(cin, asm_code);
+    return asm_code;
 
-    return "lw $4, 20($8)";
+    // return "lw $4, 20($8)";
     
 }
 
