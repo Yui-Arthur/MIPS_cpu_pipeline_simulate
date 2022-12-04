@@ -23,12 +23,16 @@ struct instruction{
     int32_t reg1 = 0;
     int32_t reg2 = 0;
     int32_t ALUresult = 0;
+    int32_t memReadValue = 0;
+    int32_t regWriteValue = 0;
 
 };
 void init(int* reg , int* memory);
 string IF();
 instruction ID(string asm_code , int32_t * reg);
 instruction EX(instruction is);
+instruction MEM(instruction is , int32_t * mem);
+instruction WB(instruction is , int32_t * reg);
 void I_format(string &operation , string code , instruction *ret );
 void R_format(string &operation , string code , instruction *ret );
 void branch(string &operation , string code , instruction *ret );
@@ -54,6 +58,8 @@ int main()
     asm_code = IF();
     is = ID(asm_code, Register);
     is = EX(is);
+    is = MEM(is , Memory);
+    is = WB(is , Register);
     // cout << asm_code<<endl;
 
     return 0;
@@ -73,10 +79,10 @@ void init(int* reg , int* memory)
 string IF()
 {
     string asm_code;
-    getline(cin, asm_code);
-    return asm_code;
+    // getline(cin, asm_code);
+    // return asm_code;
 
-    // return "lw $4, 20($8)";
+    return "lw $4, 20($8)";
     
 }
 
@@ -258,7 +264,32 @@ void print_stats(string state , instruction is)
             << setw(8) << "MemRead"<<"  |"
             << setw(10) << "MemWrite"<<"  |"
             << setw(10) << "RegWrite"<<"  |"
-            << setw(10)<<"MemtoReg"<<"  |\n";
+            << setw(10)<<"MemtoReg"<<"  |";
+
+    if(state == "ID")
+        cout<< setw(4)<<"rs"<<"  |"
+            << setw(4)<<"rt"<<"  |"
+            << setw(4)<<"rd"<<"  |"
+            << setw(6)<<"reg1"<<"  |"
+            << setw(6)<<"reg2"<<"  |"
+            << setw(14)<<"Addr/Offset"<<"  |";
+
+    else if(state == "EX")
+        cout<< setw(6)<<"reg1"<<"  |"
+            << setw(6)<<"reg2"<<"  |"
+            << setw(14)<<"Addr/Offset"<<"  |"
+            << setw(14)<<"ALUresult"<<"  |";
+
+    else if(state == "MEM")
+        cout<< setw(14)<<"ALUresult"<<"  |"
+            << setw(14)<<"memValue"<<"  |";
+    else if(state == "WB")
+        cout<< setw(18)<<"regWriteValue"<<"  |";
+
+
+
+    cout<<endl;
+
 
     cout<<"|"<< setw(8) << is.opcode_str <<"  |"
             << setw(8) << state <<"  |"
@@ -268,7 +299,32 @@ void print_stats(string state , instruction is)
             << setw(8) << is.memRead<<"  |"
             << setw(10) << is.memWrite <<"  |"
             << setw(10) << is.regWrite <<"  |"
-            << setw(10)<<is.memToReg <<"  |\n";
+            << setw(10)<<is.memToReg <<"  |";
+
+    if(state == "ID")
+        cout<< setw(4)<<(int)is.rs<<"  |"
+            << setw(4)<<(int)is.rt<<"  |"
+            << setw(4)<<(int)is.rd<<"  |"
+            << setw(6)<<is.reg1<<"  |"
+            << setw(6)<<is.reg2<<"  |"
+            << setw(14)<<(int)is.offset_addr<<"  |";
+
+    else if(state == "EX")
+        cout<< setw(6)<<is.reg1<<"  |"
+            << setw(6)<<is.reg2<<"  |"
+            << setw(14)<<(int)is.offset_addr<<"  |"
+            << setw(14)<<is.ALUresult<<"  |";
+
+    else if(state == "MEM")
+        cout<< setw(14)<<is.ALUresult<<"  |"
+            << setw(14)<<is.memReadValue<<"  |";
+
+    else if(state == "WB")
+        cout<< setw(18)<<is.regWriteValue<<"  |";
+
+    cout<<endl;
+
+    
 
     return;
 }
@@ -285,12 +341,42 @@ instruction EX(instruction is)
     is.ALUresult = a + b;
 
 
-    // print_stats("EX", is);
-    // cout << (int)is.reg1 << " " << (int)is.reg2 <<  " " << (int)is.offset_addr <<" "<< is.ALUresult<< endl;
+    print_stats("EX", is);
+
     return is;
 }
-/* 
-lw $2, 8($1)  1 2 0 8
-sw $6, 24($1) 1 6 0 24
 
-*/
+instruction MEM(instruction is , int32_t* mem)
+{
+
+    if( is.memRead ) is.memReadValue = mem[is.ALUresult];
+    if( is.memWrite ) mem[is.ALUresult] = is.reg2;
+    
+
+
+    print_stats("MEM", is);
+
+    return is;
+}
+
+
+instruction WB(instruction is , int32_t* reg)
+{
+    
+    if( is.memToReg == 1 ) is.regWriteValue = is.ALUresult;
+    else is.regWriteValue = is.memReadValue;
+
+
+    uint8_t writeReg;
+    if( is.memToReg == 0) writeReg = is.rt;
+    else writeReg = is.rd;
+
+    if( is.regWrite ) reg[writeReg] = is.regWriteValue;
+    
+    
+
+
+    print_stats("WB", is);
+
+    return is;
+}
