@@ -90,8 +90,8 @@ instruction ID(string asm_code , int* reg)
     getline(ss , code , '\n');
     // ss >> code;
 
-    cout<<operation<<endl;
-    cout<<code<<endl;
+    // cout<<operation<<endl;
+    // cout<<code<<endl;
 
     
 
