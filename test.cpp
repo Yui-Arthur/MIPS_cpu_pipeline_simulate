@@ -38,11 +38,11 @@ void I_format(string &operation , string code , instruction *ret );
 void R_format(string &operation , string code , instruction *ret );
 void branch(string &operation , string code , instruction *ret );
 int stringToInt(string &s , bool is_reg);
-void print_stats(string state , instruction is);
+void print_stats(int cycles , instruction is);
 void readAsmCode(vector<string>&asm_code_list);
 
 
-
+// add $1, $2, $3
 int main()
 {
     cin.tie(0);
@@ -55,41 +55,24 @@ int main()
 
     init(Register , Memory);
     readAsmCode(asm_code_list);
-    vector<instruction> is( asm_code_list.size() );
-    vector<string> asm_code( asm_code_list.size() );
+
 
     // decode("add $4, $8, $9");
     // decode("lw $4, 20($8)");
     // instruction is;
-    for(int i=0; i<asm_code_list.size()+4; i++){
-        cout<<endl << "cycle" << i<<endl;
+    string IF_ID;
+    instruction ID_EX;
+    instruction EX_MEM;
+    instruction MEM_WB;
 
-        if(i == 0){
-            asm_code[i] = IF(&PC, asm_code_list.begin());
+    for(int cycle=0; cycle<asm_code_list.size()+4; cycle++){
 
-        }else if(i == 1){
-            is[i - 1] = ID(asm_code[i - 1], Register);
-            asm_code[i] = IF(&PC, asm_code_list.begin());
+        IF_ID = IF(&PC, asm_code_list.begin());
+        ID_EX = ID(IF_ID , Register);
+        EX_MEM = EX(ID_EX);
+        MEM_WB = MEM(EX_MEM , Memory);
+        WB(MEM_WB , Register);
 
-        }else if(i == 2){
-            is[i - 2] = EX(is[i - 2]);
-            is[i - 1] = ID(asm_code[i - 1], Register);
-            asm_code[i] = IF(&PC, asm_code_list.begin());
-
-        }else if(i == 3){
-            is[i - 3] = MEM(is[i], Memory);
-            is[i - 2] = EX(is[i - 2]);
-            is[i - 1] = ID(asm_code[i - 1], Register);
-            asm_code[i] = IF(&PC, asm_code_list.begin());
-
-        }else{
-            is[i - 4] = WB(is[i], Register);
-            is[i - 3] = MEM(is[i], Memory);
-            is[i - 2] = EX(is[i - 2]);
-            is[i - 1] = ID(asm_code[i - 1], Register);
-            asm_code[i] = IF(&PC, asm_code_list.begin());
-        }
-        
     }
 
     // asm_code = IF(&PC, asm_code_list.begin());
@@ -158,7 +141,7 @@ instruction ID(string asm_code , int* reg)
     ret.reg2 = reg[ret.rt];
 
 
-    print_stats("ID" , ret);
+    // print_stats("ID" , ret);
 
 
     // cout<< (int)ret.rs <<" "<< (int)ret.rt <<" "<< (int)ret.rd <<" "<< (int)ret.offset_addr <<endl;
@@ -298,78 +281,65 @@ int stringToInt(string &s , bool is_reg)
     
 }
 
-void print_stats(string state , instruction is)
+void print_stats(int cycles, instruction is)
 {
+    cout<<"Cycle "<< cycles <<" :\n";
+    
+    string state[ ]={"IF" , "ID" , "EX" , "MEM" , "WB"};
 
-    cout<<"|"<< setw(8) << "Opcode"<<"  |"
-            << setw(8) << "Stage" <<"  |"
-            << setw(8) << "RegDst" <<"  |"
-            << setw(8) << "ALUSrc" <<"  |"
-            << setw(8) << "Branch" <<"  |"
-            << setw(8) << "MemRead"<<"  |"
-            << setw(10) << "MemWrite"<<"  |"
-            << setw(10) << "RegWrite"<<"  |"
-            << setw(10)<<"MemtoReg"<<"  |";
-
-    if(state == "ID")
-        cout<< setw(4)<<"rs"<<"  |"
-            << setw(4)<<"rt"<<"  |"
-            << setw(4)<<"rd"<<"  |"
-            << setw(6)<<"reg1"<<"  |"
-            << setw(6)<<"reg2"<<"  |"
-            << setw(14)<<"Addr/Offset"<<"  |";
-
-    else if(state == "EX")
-        cout<< setw(6)<<"reg1"<<"  |"
-            << setw(6)<<"reg2"<<"  |"
-            << setw(14)<<"Addr/Offset"<<"  |"
-            << setw(14)<<"ALUresult"<<"  |";
-
-    else if(state == "MEM")
-        cout<< setw(14)<<"ALUresult"<<"  |"
-            << setw(14)<<"memValue"<<"  |";
-    else if(state == "WB")
-        cout<< setw(18)<<"regWriteValue"<<"  |";
-
-
-
+    //base info
+    for(int i=0; i< 208; i++)
+        cout<<"-";
     cout<<endl;
 
+    cout<<"|"<< setw(8) << "Opcode"<<"  |"
+        << setw(8) << "Stage" <<"  |"
+        << setw(8) << "RegDst" <<"  |"
+        << setw(8) << "ALUSrc" <<"  |"
+        << setw(8) << "Branch" <<"  |"
+        << setw(8) << "MemRead"<<"  |"
+        << setw(10) << "MemWrite"<<"  |"
+        << setw(10) << "RegWrite"<<"  |"
+        << setw(10)<<"MemtoReg"<<"  |"
+        << setw(4)<<"rs"<<"  |"
+        << setw(4)<<"rt"<<"  |"
+        << setw(4)<<"rd"<<"  |"
+        << setw(6)<<"reg1"<<"  |"
+        << setw(6)<<"reg2"<<"  |"
+        << setw(12)<<"Addr/Offset"<<"  |"
+        << setw(12)<<"ALUresult"<<"  |"
+        << setw(14)<<"ReadmemValue"<<"  |"
+        << setw(14)<<"RegWriteValue"<<"  |\n";
 
-    cout<<"|"<< setw(8) << is.opcode_str <<"  |"
-            << setw(8) << state <<"  |"
+    for(int i = 0; i < 5; i++)
+    {
+        
+            cout<<"|"<< setw(8) << is.opcode_str <<"  |"
+            << setw(8) << state[i] <<"  |"
             << setw(8) << is.regDst <<"  |"
             << setw(8) << is.ALUsrc <<"  |"
             << setw(8) << is.branch <<"  |"
             << setw(8) << is.memRead<<"  |"
             << setw(10) << is.memWrite <<"  |"
             << setw(10) << is.regWrite <<"  |"
-            << setw(10)<<is.memToReg <<"  |";
-
-    if(state == "ID")
-        cout<< setw(4)<<(int)is.rs<<"  |"
+            << setw(10)<<is.memToReg <<"  |"
+            << setw(4)<<(int)is.rs<<"  |"
             << setw(4)<<(int)is.rt<<"  |"
             << setw(4)<<(int)is.rd<<"  |"
             << setw(6)<<is.reg1<<"  |"
             << setw(6)<<is.reg2<<"  |"
-            << setw(14)<<(int)is.offset_addr<<"  |";
+            << setw(12)<<(int)is.offset_addr<<"  |"
+            << setw(12)<<is.ALUresult<<"  |"
+            << setw(14)<<is.memReadValue<<"  |"
+            << setw(14)<<is.regWriteValue<<"  |";
 
-    else if(state == "EX")
-        cout<< setw(6)<<is.reg1<<"  |"
-            << setw(6)<<is.reg2<<"  |"
-            << setw(14)<<(int)is.offset_addr<<"  |"
-            << setw(14)<<is.ALUresult<<"  |";
+        cout<<endl;
+    }
 
-    else if(state == "MEM")
-        cout<< setw(14)<<is.ALUresult<<"  |"
-            << setw(14)<<is.memReadValue<<"  |";
-
-    else if(state == "WB")
-        cout<< setw(18)<<is.regWriteValue<<"  |";
-
+    for(int i=0; i< 208; i++)
+        cout<<"-";
     cout<<endl;
 
-    
 
     return;
 }
@@ -386,7 +356,7 @@ instruction EX(instruction is)
     is.ALUresult = a + b;
 
 
-    print_stats("EX", is);
+    // print_stats("EX", is);
 
     return is;
 }
@@ -399,7 +369,7 @@ instruction MEM(instruction is , int32_t* mem)
     
 
 
-    print_stats("MEM", is);
+    // print_stats("MEM", is);
 
     return is;
 }
@@ -421,7 +391,7 @@ instruction WB(instruction is , int32_t* reg)
     
 
 
-    print_stats("WB", is);
+    // print_stats("WB", is);
 
     return is;
 }
