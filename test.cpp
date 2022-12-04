@@ -32,6 +32,7 @@ void I_format(string &operation , string code , instruction *ret );
 void R_format(string &operation , string code , instruction *ret );
 void branch(string &operation , string code , instruction *ret );
 int stringToInt(string &s , bool is_reg);
+void print_stats(string state , instruction is);
 
 
 
@@ -70,10 +71,10 @@ void init(int* reg , int* memory)
 string IF()
 {
     string asm_code;
-    getline(cin, asm_code);
-    return asm_code;
+    // getline(cin, asm_code);
+    // return asm_code;
 
-    // return "lw $4, 20($8)";
+    return "lw $4, 20($8)";
     
 }
 
@@ -103,24 +104,8 @@ instruction ID(string asm_code , int* reg)
     ret.reg1 = reg[ret.rs];
     ret.reg2 = reg[ret.rt];
 
-    cout<<"|"<< setw(8) << "Opcode"<<"  |"
-            << setw(8) << "RegDst" <<"  |"
-            << setw(8) << "ALUSrc" <<"  |"
-            << setw(8) << "Branch" <<"  |"
-            << setw(8) << "MemRead"<<"  |"
-            << setw(10) << "MemWrite"<<"  |"
-            << setw(10) << "RegWrite"<<"  |"
-            << setw(10)<<"MemtoReg"<<"  |\n";
 
-    cout<<"|"<< setw(8) << (int)ret.opcode <<"  |"
-            << setw(8) << ret.regDst <<"  |"
-            << setw(8) << ret.ALUsrc <<"  |"
-            << setw(8) << ret.branch <<"  |"
-            << setw(8) << ret.memRead<<"  |"
-            << setw(10) << ret.memWrite <<"  |"
-            << setw(10) << ret.regWrite <<"  |"
-            << setw(10)<< ret.memToReg <<"  |\n";
-
+    print_stats("ID" , ret);
 
 
     // cout<< (int)ret.rs <<" "<< (int)ret.rt <<" "<< (int)ret.rd <<" "<< (int)ret.offset_addr <<endl;
@@ -258,4 +243,30 @@ int stringToInt(string &s , bool is_reg)
     // cout<< ret << endl;
     return ret;
     
+}
+
+void print_stats(string state , instruction is)
+{
+
+    cout<<"|"<< setw(8) << "Opcode"<<"  |"
+            << setw(8) << "Stage" <<"  |"
+            << setw(8) << "RegDst" <<"  |"
+            << setw(8) << "ALUSrc" <<"  |"
+            << setw(8) << "Branch" <<"  |"
+            << setw(8) << "MemRead"<<"  |"
+            << setw(10) << "MemWrite"<<"  |"
+            << setw(10) << "RegWrite"<<"  |"
+            << setw(10)<<"MemtoReg"<<"  |\n";
+
+    cout<<"|"<< setw(8) << is.opcode_str <<"  |"
+            << setw(8) << state <<"  |"
+            << setw(8) << is.regDst <<"  |"
+            << setw(8) << is.ALUsrc <<"  |"
+            << setw(8) << is.branch <<"  |"
+            << setw(8) << is.memRead<<"  |"
+            << setw(10) << is.memWrite <<"  |"
+            << setw(10) << is.regWrite <<"  |"
+            << setw(10)<<is.memToReg <<"  |\n";
+
+    return;
 }
