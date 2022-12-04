@@ -22,12 +22,13 @@ struct instruction{
 
     int32_t reg1 = 0;
     int32_t reg2 = 0;
-    
+    int32_t ALUresult = 0;
 
 };
 void init(int* reg , int* memory);
 string IF();
 instruction ID(string asm_code , int32_t * reg);
+instruction EX(instruction is);
 void I_format(string &operation , string code , instruction *ret );
 void R_format(string &operation , string code , instruction *ret );
 void branch(string &operation , string code , instruction *ret );
@@ -52,7 +53,8 @@ int main()
     string asm_code;
     asm_code = IF();
     is = ID(asm_code, Register);
-
+    is = EX(is);
+    // cout << asm_code<<endl;
 
     return 0;
 }
@@ -71,10 +73,10 @@ void init(int* reg , int* memory)
 string IF()
 {
     string asm_code;
-    // getline(cin, asm_code);
-    // return asm_code;
+    getline(cin, asm_code);
+    return asm_code;
 
-    return "lw $4, 20($8)";
+    // return "lw $4, 20($8)";
     
 }
 
@@ -270,3 +272,25 @@ void print_stats(string state , instruction is)
 
     return;
 }
+
+instruction EX(instruction is)
+{
+
+   
+    int32_t a = is.reg1 , b = is.reg2;
+
+    if( is.ALUsrc == 1 ) b = is.offset_addr;
+    if( is.ALUopcode == 1 ) b = -b;
+
+    is.ALUresult = a + b;
+
+
+    // print_stats("EX", is);
+    // cout << (int)is.reg1 << " " << (int)is.reg2 <<  " " << (int)is.offset_addr <<" "<< is.ALUresult<< endl;
+    return is;
+}
+/* 
+lw $2, 8($1)  1 2 0 8
+sw $6, 24($1) 1 6 0 24
+
+*/
