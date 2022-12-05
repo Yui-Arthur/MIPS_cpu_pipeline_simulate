@@ -40,6 +40,7 @@ void R_format(instruction *ret );
 void branch(instruction *ret );
 int stringToInt(string &s , bool is_reg);
 void print_stats(int cycles , instruction *is);
+void print_reg_memory(int* reg, int* memory);
 void readAsmCode(vector<string>&asm_code_list);
 
 
@@ -82,25 +83,17 @@ int main()
         ID_EX = ID(IF_ID , Register);
         IF_ID = IF(&PC, asm_code_list.begin() , asm_code_list.end());
         
-        
-
         print_stats(cycle , stage);
-        
+        print_reg_memory(Register, Memory);
     }
 
-    // asm_code = IF(&PC, asm_code_list.begin());
-    // is = ID(asm_code, Register);
-    // is = EX(is);
-    // is = MEM(is, Memory);
-    // is = WB(is, Register);
-    // cout << asm_code << endl;
 
     return 0;
 }
 
 void init(int32_t* reg , int32_t* memory)
 {
-    for(int i = 1; i < 32; i++)
+    for(int i = 0; i < 32; i++)
        reg[i] = 1 , memory[i] = 1;
 
     reg[0] = 0;
@@ -373,6 +366,32 @@ instruction EX(instruction is)
     // print_stats("EX", is);
 
     return is;
+}
+
+void print_reg_memory(int32_t *reg, int32_t *memory){
+
+    for(int i=0; i< 268; i++)
+        cout<<"-";
+    cout<<endl;
+
+    cout<<"|"<< setw(9) << "Index" <<"  |";
+    for (int i=0; i<32; i++)
+        cout << setw(5) << i <<"  |";
+    cout << endl;
+
+    cout<<"|"<< setw(9) << "Register" <<"  |";
+    for (int i=0; i<32; i++)
+        cout << setw(5) << reg[i] <<"  |";
+    cout << endl;
+
+    cout<<"|"<< setw(9) << "Memory" <<"  |";
+    for (int i=0; i<32; i++)
+        cout << setw(5) << memory[i] <<"  |";
+    cout << endl;
+
+    for(int i=0; i< 268; i++)
+        cout<<"-";
+    cout<<endl;
 }
 
 instruction MEM(instruction is , int32_t* mem)
