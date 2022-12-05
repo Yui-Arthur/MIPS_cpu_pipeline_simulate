@@ -13,33 +13,37 @@ struct instruction{
     uint8_t rt = 0;
     uint8_t rd = 0;
     int16_t offset_addr = 0;
-    bool branch;
-    bool memRead;
-    bool memWrite;
-    bool ALUsrc;
-    bool memToReg;
-    bool regDst;
-    bool regWrite;
-    bool ALUopcode;
+    uint8_t WB_reg = 0;
+    bool branch = 0;
+    bool memRead= 0;
+    bool memWrite= 0;
+    bool ALUsrc= 0;
+    bool memToReg= 0;
+    bool regDst= 0;
+    bool regWrite= 0;
+    bool ALUopcode= 0;
+    bool freezePC = 0;
+    bool changePC = 0;
 
     int32_t reg1 = 0;
     int32_t reg2 = 0;
     int32_t ALUresult = 0;
     int32_t memReadValue = 0;
     int32_t regWriteValue = 0;
+    int32_t PC = 0;
 
 };
 void init(int* reg , int* memory);
-instruction IF(int32_t *PC , vector<string>::iterator asm_code_list_begin , vector<string>::iterator asm_code_list_end );
-instruction ID(instruction is , int32_t * reg);
-instruction EX(instruction is);
+instruction IF(instruction ID_EX_is , instruction IF_ID_is , int32_t *PC , vector<string>::iterator asm_code_list_begin , vector<string>::iterator asm_code_list_end );
+instruction ID(instruction is , instruction previous_is , int32_t * reg);
+instruction EX(instruction is , instruction previous1_is , instruction previous2_is);
 instruction MEM(instruction is , int32_t * mem);
 instruction WB(instruction is , int32_t * reg);
 void I_format(instruction *ret );
 void R_format(instruction *ret );
 void branch(instruction *ret );
 int stringToInt(string &s , bool is_reg);
-void print_stats(int cycles , instruction *is);
+void print_stats(int cycles , instruction *is , int&pc );
 void print_reg_memory(int* reg, int* memory);
 void readAsmCode(vector<string>&asm_code_list);
 
@@ -57,6 +61,11 @@ int main()
 
     init(Register , Memory);
     readAsmCode(asm_code_list);
+    asm_code_list.push_back("");
+    asm_code_list.push_back("");
+    asm_code_list.push_back("");
+    asm_code_list.push_back("");
+    
 
 
     // decode("add $4, $8, $9");
@@ -72,24 +81,39 @@ int main()
     instruction &WB_END = stage[4];
 
 
-    
+    int cycles = 1;    
 
-    for(int cycle = 1; cycle <= asm_code_list.size()+4; cycle++){
+    while(PC < asm_code_list.size()){
         
         
         WB_END = WB(MEM_WB , Register);
         MEM_WB = MEM(EX_MEM , Memory);
-        EX_MEM = EX(ID_EX);
-        ID_EX = ID(IF_ID , Register);
-        IF_ID = IF(&PC, asm_code_list.begin() , asm_code_list.end());
+        EX_MEM = EX(ID_EX , EX_MEM , WB_END);
+        ID_EX = ID(IF_ID , ID_EX , Register);
+        IF_ID = IF(ID_EX , IF_ID , &PC, asm_code_list.begin() , asm_code_list.end());
         
-        print_stats(cycle , stage);
-        print_reg_memory(Register, Memory);
+        print_stats(cycles , stage , PC);
+        cycles++;
+        // cout<<"PC : "<<PC <<" asm: "<< asm_code_list.size() <<endl;
+        // cout<<endl;
+        // print_reg_memory(Register, Memory);
     }
+
+    print_reg_memory(Register, Memory);
 
 
     return 0;
 }
+/*
+
+add $6, $4, $5 // t6 = t4 + t5 = 2
+add $6, $6, $5 // t6 = t6 + t5 = 3
+add $6, $6, $5 // t6 = t6 + t5 = 4
+add $6, $6, $5 // t6 = t6 + t5 = 5
+add $6, $6, $5 // t6 = t6 + t5 = 6
+sw $6, 24($0)
+
+*/
 
 void init(int32_t* reg , int32_t* memory)
 {
@@ -111,15 +135,36 @@ void readAsmCode(vector<string> &asm_code_list)
     return;
 }
 
-instruction IF(int32_t *PC , vector<string>::iterator asm_code_list_begin , vector<string>::iterator asm_code_list_end )
+instruction IF(instruction ID_EX_is, instruction IF_ID_is ,  int32_t *PC , vector<string>::iterator asm_code_list_begin , vector<string>::iterator asm_code_list_end )
 {
     instruction ret;
 
+    // load data hazards
+    if (ID_EX_is.freezePC)
+    {
+        // cout<<"IF_ID "<< IF_ID_is.PC <<" "<<IF_ID_is.opcode_str<< endl;
+        return IF_ID_is;    
+    }
+
+    // check code is end
     if( (asm_code_list_begin + *PC) == asm_code_list_end )
     return ret;
 
     string asm_code = *(asm_code_list_begin + *PC);
     *PC += 1;
+
+    ret.PC = *PC;
+
+    // branch 
+    if( ID_EX_is.changePC )
+    {
+        // cout<<"odd PC: "<<*PC<<endl;
+        // cout<< ID_EX_is.opcode_str <<endl;
+        *PC = ID_EX_is.PC + ID_EX_is.offset_addr;
+        // cout<<ID_EX_is.PC<<" "<<ID_EX_is.offset_addr<<endl;
+        // cout<<"new PC: "<<*PC<<endl;
+        return ret;
+    }
 
     stringstream ss;
     string operation , code;
@@ -129,23 +174,41 @@ instruction IF(int32_t *PC , vector<string>::iterator asm_code_list_begin , vect
     ss >> ret.opcode_str;
     getline(ss , ret.opcode_remain , '\n');
 
+
     return ret;
     
 }
 
-instruction ID(instruction is , int* reg)
+instruction ID(instruction is , instruction ID_EX_is, int* reg)
 {
-
-
-    
 
     if( is.opcode_str == "lw" || is.opcode_str == "sw")  I_format(&is);
     else if ( is.opcode_str == "add" || is.opcode_str == "sub" ) R_format(&is);
     else branch( &is );
 
-
     is.reg1 = reg[is.rs];
     is.reg2 = reg[is.rt];
+
+    if( is.opcode_str == "beq" && is.reg1 == is.reg2)
+        is.changePC = 1;
+    
+
+
+
+    // cout<< ID_EX_is.memRead <<" " << (int)ID_EX_is.rt <<" "<<(int)is.rs<<" "<<(int)is.rt <<endl;
+
+    // load / store hazard
+    if( ID_EX_is.memRead && ( ID_EX_is.rt == is.rs || ID_EX_is.rt == is.rt ))
+    {
+        instruction ret;
+        ret.freezePC = 1;
+        // cout<<"!!!!!!!!!!!!!!!!!\n";
+        return ret;
+    }
+    
+
+
+
 
 
     // print_stats("ID" , ret);
@@ -234,7 +297,7 @@ void R_format( instruction *ret )
     ret->rs = (uint8_t)stringToInt(tmp , true);
 
     // rt
-    getline(ss , tmp , ',');
+    getline(ss , tmp );
     ret->rt = (uint8_t)stringToInt(tmp , true);
 
     
@@ -265,8 +328,9 @@ void branch( instruction *ret )
     ret->rt = (uint8_t)stringToInt(tmp , true);
 
     // addr
-    getline(ss , tmp , ',');
-    ret->offset_addr = (int16_t)stringToInt(tmp , true);
+    getline(ss , tmp );
+    ret->offset_addr = (int16_t)stringToInt(tmp , false);
+
 }
 
 int stringToInt(string &s , bool is_reg)
@@ -288,9 +352,10 @@ int stringToInt(string &s , bool is_reg)
     
 }
 
-void print_stats(int cycles, instruction *is)
+void print_stats(int cycles, instruction *is , int &pc)
 {
     cout<<"Cycle "<< cycles <<" :\n";
+    cout<<"PC = "<< pc <<endl;
     
     string state[ ]={"IF" , "ID" , "EX" , "MEM" , "WB"};
 
@@ -317,6 +382,11 @@ void print_stats(int cycles, instruction *is)
         << setw(12)<<"ALUresult"<<"  |"
         << setw(14)<<"ReadmemValue"<<"  |"
         << setw(14)<<"RegWriteValue"<<"  |\n";
+
+    for(int i=0; i< 208; i++)
+    cout<<"-";
+    cout<<endl;
+
 
     for(int i = 0; i < 5; i++)
     {
@@ -351,10 +421,27 @@ void print_stats(int cycles, instruction *is)
     return;
 }
 
-instruction EX(instruction is)
+instruction EX(instruction is , instruction EX_MEM_is , instruction MEM_WB_is)
 {
 
    
+
+    if(is.regDst) is.WB_reg = is.rd;
+    else is.WB_reg = is.rt;
+
+    if( EX_MEM_is.regWrite && EX_MEM_is.WB_reg != 0 && (EX_MEM_is.WB_reg == is.rs || EX_MEM_is.WB_reg == is.rt)){
+
+        if (EX_MEM_is.WB_reg == is.rs) is.reg1 = EX_MEM_is.ALUresult;
+        if (EX_MEM_is.WB_reg == is.rt) is.reg2 = EX_MEM_is.ALUresult;
+
+    } 
+    else if( MEM_WB_is.regWrite && MEM_WB_is.WB_reg != 0 && ( MEM_WB_is.WB_reg == is.rs || MEM_WB_is.WB_reg == is.rt )){
+
+        if(MEM_WB_is.WB_reg == is.rs) is.reg1 = MEM_WB_is.regWriteValue;
+        if(MEM_WB_is.WB_reg == is.rt) is.reg2 = MEM_WB_is.regWriteValue;
+
+    }
+
     int32_t a = is.reg1 , b = is.reg2;
 
     if( is.ALUsrc == 1 ) b = is.offset_addr;
@@ -370,26 +457,63 @@ instruction EX(instruction is)
 
 void print_reg_memory(int32_t *reg, int32_t *memory){
 
-    for(int i=0; i< 268; i++)
+    for(int i=0; i< 188; i++)
+        cout<<"-";
+    cout<<endl;
+
+    // 0~15
+    cout<<"|"<< setw(9) << "Index" <<"  |";
+    for (int i=0; i<16; i++)
+        cout << setw(8) << i <<"  |";
+    cout << endl;
+
+    for(int i=0; i< 188; i++)
+        cout<<"-";
+    cout<<endl;
+
+
+    cout<<"|"<< setw(9) << "Register" <<"  |";
+    for (int i=0; i<16; i++)
+        cout << setw(8) << reg[i] <<"  |";
+    cout << endl;
+
+    cout<<"|"<< setw(9) << "Memory" <<"  |";
+    for (int i=0; i<16; i++)
+        cout << setw(8) << memory[i] <<"  |";
+    cout << endl;
+
+    for(int i=0; i< 188; i++)
+        cout<<"-";
+    cout<<endl<<endl;
+
+
+    // 16 ~ 31
+    for(int i=0; i< 188; i++)
         cout<<"-";
     cout<<endl;
 
     cout<<"|"<< setw(9) << "Index" <<"  |";
-    for (int i=0; i<32; i++)
-        cout << setw(5) << i <<"  |";
+    for (int i=16; i<32; i++)
+        cout << setw(8) << i <<"  |";
     cout << endl;
 
+    for(int i=0; i< 188; i++)
+        cout<<"-";
+    cout<<endl;
+
+
     cout<<"|"<< setw(9) << "Register" <<"  |";
-    for (int i=0; i<32; i++)
-        cout << setw(5) << reg[i] <<"  |";
+    for (int i=16; i<32; i++)
+        cout << setw(8) << reg[i] <<"  |";
     cout << endl;
 
     cout<<"|"<< setw(9) << "Memory" <<"  |";
-    for (int i=0; i<32; i++)
-        cout << setw(5) << memory[i] <<"  |";
+
+    for (int i=16; i<32; i++)
+        cout << setw(8) << memory[i] <<"  |";
     cout << endl;
 
-    for(int i=0; i< 268; i++)
+    for(int i=0; i< 188; i++)
         cout<<"-";
     cout<<endl;
 }
@@ -415,11 +539,9 @@ instruction WB(instruction is , int32_t* reg)
     else is.regWriteValue = is.memReadValue;
 
 
-    uint8_t writeReg;
-    if( is.memToReg == 0) writeReg = is.rt;
-    else writeReg = is.rd;
 
-    if( is.regWrite ) reg[writeReg] = is.regWriteValue;
+
+    if( is.regWrite ) reg[is.WB_reg] = is.regWriteValue;
     
     
 
