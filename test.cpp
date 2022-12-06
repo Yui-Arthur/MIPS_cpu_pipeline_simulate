@@ -35,7 +35,7 @@ struct instruction{
 };
 void init(int* reg , int* memory);
 instruction IF(instruction ID_EX_is , instruction IF_ID_is , int32_t *PC , vector<string>::iterator asm_code_list_begin , vector<string>::iterator asm_code_list_end );
-instruction ID(instruction is , instruction previous_is , int32_t * reg);
+instruction ID(instruction is , instruction ID_EX_is , instruction EX_MEM_is , instruction MEM_WB_is , int32_t * reg);
 instruction EX(instruction is , instruction previous1_is , instruction previous2_is);
 instruction MEM(instruction is , int32_t * mem);
 instruction WB(instruction is , int32_t * reg);
@@ -89,7 +89,7 @@ int main()
         WB_END = WB(MEM_WB , Register);
         MEM_WB = MEM(EX_MEM , Memory);
         EX_MEM = EX(ID_EX , EX_MEM , WB_END);
-        ID_EX = ID(IF_ID , ID_EX , Register);
+        ID_EX = ID(IF_ID , ID_EX , MEM_WB , WB_END , Register);
         IF_ID = IF(ID_EX , IF_ID , &PC, asm_code_list.begin() , asm_code_list.end());
         
         print_stats(cycles , stage , PC);
@@ -179,7 +179,7 @@ instruction IF(instruction ID_EX_is, instruction IF_ID_is ,  int32_t *PC , vecto
     
 }
 
-instruction ID(instruction is , instruction ID_EX_is, int* reg)
+instruction ID(instruction is , instruction ID_EX_is , instruction EX_MEM_is , instruction MEM_WB_is , int* reg)
 {
 
     if( is.opcode_str == "lw" || is.opcode_str == "sw")  I_format(&is);
@@ -189,8 +189,6 @@ instruction ID(instruction is , instruction ID_EX_is, int* reg)
     is.reg1 = reg[is.rs];
     is.reg2 = reg[is.rt];
 
-    if( is.opcode_str == "beq" && is.reg1 == is.reg2)
-        is.changePC = 1;
     
 
 
@@ -202,9 +200,59 @@ instruction ID(instruction is , instruction ID_EX_is, int* reg)
     {
         instruction ret;
         ret.freezePC = 1;
-        // cout<<"!!!!!!!!!!!!!!!!!\n";
         return ret;
     }
+
+
+    // branch data hazard
+
+
+    bool reg1_forward = false, reg2_forward = false;
+
+    if(is.regDst) is.WB_reg = is.rd;
+    else is.WB_reg = is.rt;
+
+
+    // branch source = 上個 ID_EX 寫入的暫存器 
+    if( is.opcode_str == "beq" && ID_EX_is.regWrite && !ID_EX_is.memRead && ID_EX_is.rd !=0 && (ID_EX_is.rd == is.rs || ID_EX_is.rt == is.rt))
+    {
+        
+        instruction ret;
+        ret.freezePC = 1;
+        return ret;
+        
+    }   
+
+    // branch source = 上上個 EX_MEM 讀取的記憶體 暫存器
+    if ( is.opcode_str == "beq" && EX_MEM_is.memRead && ( EX_MEM_is.rt == is.rs || ID_EX_is.rt == is.rt))
+    {
+        
+        instruction ret;
+        ret.freezePC = 1;
+        return ret;
+        
+    }  
+
+
+    // branch source = 上上個 EX_MEM or 上上上個 MEM_WB 寫入的暫存器
+
+    if( is.opcode_str == "beq" && EX_MEM_is.regWrite && EX_MEM_is.WB_reg != 0 && (EX_MEM_is.WB_reg == is.rs || EX_MEM_is.WB_reg == is.rt)){
+
+        if (EX_MEM_is.WB_reg == is.rs) is.reg1 = EX_MEM_is.ALUresult , reg1_forward = true;
+        if (EX_MEM_is.WB_reg == is.rt) is.reg2 = EX_MEM_is.ALUresult , reg2_forward = true;
+
+    }
+
+    if( is.opcode_str == "beq" && MEM_WB_is.regWrite && MEM_WB_is.WB_reg != 0 && ( MEM_WB_is.WB_reg == is.rs || MEM_WB_is.WB_reg == is.rt )){
+
+        if(MEM_WB_is.WB_reg == is.rs && !reg1_forward) is.reg1 = MEM_WB_is.regWriteValue;
+        if(MEM_WB_is.WB_reg == is.rt && !reg2_forward) is.reg2 = MEM_WB_is.regWriteValue;
+
+    }
+
+    if( is.opcode_str == "beq" && is.reg1 == is.reg2)
+        is.changePC = 1;
+    
     
 
 
@@ -429,16 +477,19 @@ instruction EX(instruction is , instruction EX_MEM_is , instruction MEM_WB_is)
     if(is.regDst) is.WB_reg = is.rd;
     else is.WB_reg = is.rt;
 
+    bool reg1_forward = false, reg2_forward = false;
+
     if( EX_MEM_is.regWrite && EX_MEM_is.WB_reg != 0 && (EX_MEM_is.WB_reg == is.rs || EX_MEM_is.WB_reg == is.rt)){
 
-        if (EX_MEM_is.WB_reg == is.rs) is.reg1 = EX_MEM_is.ALUresult;
-        if (EX_MEM_is.WB_reg == is.rt) is.reg2 = EX_MEM_is.ALUresult;
+        if (EX_MEM_is.WB_reg == is.rs) is.reg1 = EX_MEM_is.ALUresult , reg1_forward = true;
+        if (EX_MEM_is.WB_reg == is.rt) is.reg2 = EX_MEM_is.ALUresult , reg2_forward = true;
 
-    } 
-    else if( MEM_WB_is.regWrite && MEM_WB_is.WB_reg != 0 && ( MEM_WB_is.WB_reg == is.rs || MEM_WB_is.WB_reg == is.rt )){
+    }
 
-        if(MEM_WB_is.WB_reg == is.rs) is.reg1 = MEM_WB_is.regWriteValue;
-        if(MEM_WB_is.WB_reg == is.rt) is.reg2 = MEM_WB_is.regWriteValue;
+    if( MEM_WB_is.regWrite && MEM_WB_is.WB_reg != 0 && ( MEM_WB_is.WB_reg == is.rs || MEM_WB_is.WB_reg == is.rt )){
+
+        if(MEM_WB_is.WB_reg == is.rs && !reg1_forward) is.reg1 = MEM_WB_is.regWriteValue;
+        if(MEM_WB_is.WB_reg == is.rt && !reg2_forward) is.reg2 = MEM_WB_is.regWriteValue;
 
     }
 
