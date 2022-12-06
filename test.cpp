@@ -224,7 +224,7 @@ instruction ID(instruction is , instruction ID_EX_is , instruction EX_MEM_is , i
     }   
 
     // branch source = 上上個 EX_MEM 讀取的記憶體 暫存器
-    if ( is.opcode_str == "beq" && EX_MEM_is.memRead && ( EX_MEM_is.rt == is.rs || ID_EX_is.rt == is.rt))
+    if ( is.opcode_str == "beq" && EX_MEM_is.memRead && ( EX_MEM_is.rt == is.rs || EX_MEM_is.rt == is.rt))
     {
         
         instruction ret;
