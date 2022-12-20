@@ -413,8 +413,8 @@ instruction pipelineCPUSimulator::EX(instruction is , instruction EX_MEM_is , in
 instruction pipelineCPUSimulator::MEM(instruction is)
 {
 
-    if( is.memRead ) is.memReadValue = Memory[is.ALUresult];
-    if( is.memWrite ) Memory[is.ALUresult] = is.reg2;
+    if( is.memRead ) is.memReadValue = Memory[is.ALUresult/4];
+    if( is.memWrite ) Memory[is.ALUresult/4] = is.reg2;
     
 
 
