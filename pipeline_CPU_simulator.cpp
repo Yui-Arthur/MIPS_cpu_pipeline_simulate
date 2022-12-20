@@ -112,7 +112,7 @@ void pipelineCPUSimulator::print_stats(int cycles, instruction *is)
     cout<<"Cycle "<< cycles <<" :\n";
     cout<<"PC = "<< PC <<endl;
     
-    string state[ ]={"IF" , "ID" , "EX" , "MEM" , "WB"};
+    string state[ ]={"IF_ID" , "ID_EX" , "EX_MEM" , "MEM_WB" , "WB_END"};
 
     //base info
     for(int i=0; i< 208; i++)
