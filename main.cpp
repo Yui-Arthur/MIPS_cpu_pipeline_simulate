@@ -10,6 +10,7 @@ int main()
     ios::sync_with_stdio(false);
 
     pipelineCPUSimulator a("sample_input\\input1.txt");
+    // pipelineCPUSimulator a;
 
     a.startSimulation();
 
