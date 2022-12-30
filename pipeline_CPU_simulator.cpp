@@ -351,6 +351,9 @@ instruction pipelineCPUSimulator::IF(instruction ID_EX_is, instruction IF_ID_is)
  */ 
 instruction pipelineCPUSimulator::ID(instruction is , instruction ID_EX_is , instruction EX_MEM_is , instruction MEM_WB_is)
 {
+    // 如果為空的指令直接回傳 不執行接下來的程式
+    if(is.opcode_str == "null")
+        return is;
     // 判斷opcode的種類 進入不同的func解碼
     // 解碼會將Asm Code 解析成 rs rt rd offset等等 並將Control Signal填好
     if( is.opcode_str == "lw" || is.opcode_str == "sw")  I_format(&is);
@@ -473,7 +476,9 @@ instruction pipelineCPUSimulator::ID(instruction is , instruction ID_EX_is , ins
 instruction pipelineCPUSimulator::EX(instruction is , instruction EX_MEM_is , instruction MEM_WB_is)
 {
 
-
+    // 如果為空的指令直接回傳 不執行接下來的程式
+    if(is.opcode_str == "null")
+        return is;
 
     // 確認寫入的暫存器是哪個 放到WB_reg中
     if(is.regDst) is.WB_reg = is.rd;
@@ -535,6 +540,10 @@ instruction pipelineCPUSimulator::EX(instruction is , instruction EX_MEM_is , in
  */ 
 instruction pipelineCPUSimulator::MEM(instruction is)
 {
+    // 如果為空的指令直接回傳 不執行接下來的程式
+    if(is.opcode_str == "null")
+        return is;
+
     // 如果 memRead ==1 代表要讀取Mem 所以讀取ALUresult/4 
     // (因為Mem是 Word Addr 而 ALUresult是 Byte Addr 所以需除四)
     if( is.memRead ) is.memReadValue = Memory[is.ALUresult/4];
@@ -553,6 +562,10 @@ instruction pipelineCPUSimulator::MEM(instruction is)
  */ 
 instruction pipelineCPUSimulator::WB(instruction is)
 {
+    // 如果為空的指令直接回傳 不執行接下來的程式
+    if(is.opcode_str == "null")
+        return is;
+
     // 判斷要寫入的值是memRead or ALUresult
     if( is.memToReg == 1 ) is.regWriteValue = is.ALUresult;
     else is.regWriteValue = is.memReadValue;
