@@ -55,6 +55,8 @@ void pipelineCPUSimulator::startSimulation()
     // Instruction主要執行的地方 前面塞入了四個空指令 所以只需判斷PC是否在asm_code_list的長度內
     while(PC < asm_code_list.size()){
         
+        // 當每個Cycle開始時 會印出目前的狀態
+        print_stats(cycles , stage);
         /*
          * pipeline主要執行的地方
          * 每一個Cycle Instruction會依序由最後(WB)的地方開始執行 
@@ -63,14 +65,12 @@ void pipelineCPUSimulator::startSimulation()
          * WB_END並沒有在實際上的pipeline架構中 是我們為了確認結果才放進來的 實際上並不需要
          */
 
-        WB_END = WB(MEM_WB );
+        WB_END = WB(MEM_WB);
         MEM_WB = MEM(EX_MEM);
         EX_MEM = EX(ID_EX , EX_MEM , WB_END);
         ID_EX = ID(IF_ID , ID_EX , MEM_WB , WB_END);
         IF_ID = IF(ID_EX , IF_ID);
         
-        // 當每個Cycle結束後 會印出目前的狀態
-        print_stats(cycles , stage);
         // 接著將Cycle+1
         cycles++;
 
@@ -173,12 +173,12 @@ void pipelineCPUSimulator::print_stats(int cycles, instruction *is)
     // IF為下一個要執行的指令 直接利用PC取的下一個Instruction
     
     if (PC < asm_code_list.size())
-    cout<<"|          |"<< setw(8) << state[0] << "  |"
+    cout<<"|          |"<< setw(8) << "IF" << "  |"
         << setw(19) << asm_code_list[PC]<<endl;
 
 
     //印出各個Stage的狀況
-    for(int i = 1; i < 5; i++)
+    for(int i = 0; i < 4; i++)
     {
         
             cout<<"|"<< setw(8) << is[i].opcode_str <<"  |"
