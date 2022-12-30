@@ -32,9 +32,9 @@ gcc main.cpp pipeline_CPU_simulator.cpp -o main
 or
 
 ```bash
-./main << ${FilePath}
+./main < ${FilePath}
 # Example
-./main << sample_input/input1.txt
+./main < sample_input/input1.txt
 ```
 
 ## Use Stdin as Input
