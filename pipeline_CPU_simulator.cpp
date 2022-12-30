@@ -140,7 +140,7 @@ void pipelineCPUSimulator::print_stats(int cycles, instruction *is)
     cout<<"Cycle "<< cycles <<" :\n";
     cout<<"PC = "<< PC <<endl;
     
-    string state[ ]={"IF" , "ID" , "EX" , "MEM" , "WB"};
+    string state[ ]={"ID" , "EX" , "MEM" , "WB"};
 
     // 印出的格式
     for(int i=0; i< 208; i++)
@@ -173,7 +173,8 @@ void pipelineCPUSimulator::print_stats(int cycles, instruction *is)
     // IF為下一個要執行的指令 直接利用PC取的下一個Instruction
     
     if (PC < asm_code_list.size())
-    cout<<"|          |"<< setw(8) << "IF" << "  |"
+    cout<<"|"<< setw(8) << "null" <<"  |"
+        << setw(8) << "IF" << "  |"
         << setw(19) << asm_code_list[PC]<<endl;
 
 
