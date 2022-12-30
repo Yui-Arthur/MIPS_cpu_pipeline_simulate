@@ -28,6 +28,8 @@ gcc main.cpp pipeline_CPU_simulator.cpp -o main
 ./main sample_input/input1.txt
 # Muti File Example
 ./main sample_input/input1.txt sample_input/input2.txt
+# Output file 
+./main ${FilePath} > ${Outputfile}
 ```
 or
 
@@ -35,6 +37,8 @@ or
 ./main < ${FilePath}
 # Example
 ./main < sample_input/input1.txt
+# Output file 
+./main < ${FilePath} > ${Outputfile}
 ```
 
 ## Use Stdin as Input
