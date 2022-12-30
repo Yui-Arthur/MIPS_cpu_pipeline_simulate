@@ -48,3 +48,34 @@ or
 # input Mips Asm Code
 # Ex. lw $2, 8($0)
 ```
+
+# Output Format
+### Show current PC and cycles then print the pipeline register (IF_ID , ID_EX , EX_MEM , MEM_WB) before this cycle 
+### ![](./example_output.png)
+## Stage 
+* IF - next instruction into IF Stage
+* ID - IF_ID into ID Stage
+* EX - ID_EX into EX Stage
+* MEM - EX_MEM into MEM Stage
+* WB - MEM_WB into WB Stage
+
+## Signal and Value
+* Opcode: instruction that specifies the operation to be performed
+* Stage : IF, ID, EX, MEM, WB
+* RegDst : selects the destination register (rt or rd)
+* ALUSrc : selects the ALU input (rt or offset / addr)
+* Branch : the operation is branch or not
+* MemRead : the operation will read memory
+* MemWrite : the operation will write memory
+* RegWrite : the operation will write register
+* MemtoReg : selects the source value for the register write (memReadValue or ALUresult)
+* rs : source register
+* rt : target register
+* rd : destination register
+* reg1 : rs register value
+* reg2 : rt register value
+* Addr/Offset : the offset of memory or the PC relative addr
+* ALUresult : the value of ALU result
+* ReadmemValue : the value of memory read
+* RegWriteValue : the value of register write
+
