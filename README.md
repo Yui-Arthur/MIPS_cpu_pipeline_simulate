@@ -17,7 +17,7 @@
 ```bash
 git clone https://github.com/Yui-Arthur/MIPS_cpu_pipeline_simulate.git
 cd MIPS_cpu_pipeline_simulate
-gcc main.cpp pipeline_CPU_simulator.cpp -o main
+g++ main.cpp pipeline_CPU_simulator.cpp -o main
 ```
 
 ## Use File as Input
