@@ -173,11 +173,12 @@ void pipelineCPUSimulator::print_stats(int cycles, instruction *is)
     // IF為下一個要執行的指令 直接利用PC取的下一個Instruction
     
     if (PC < asm_code_list.size())
-    cout<<"|"<<setw(19)<<asm_code_list[PC]<<endl;
+    cout<<"|          |"<< setw(8) << state[0] << "  |"
+        << setw(19) << asm_code_list[PC]<<endl;
 
 
     //印出各個Stage的狀況
-    for(int i = 0; i < 4; i++)
+    for(int i = 1; i < 5; i++)
     {
         
             cout<<"|"<< setw(8) << is[i].opcode_str <<"  |"
