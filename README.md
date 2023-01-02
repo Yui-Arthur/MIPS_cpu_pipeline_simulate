@@ -6,7 +6,7 @@
 ### The pipeline_CPU_simulator Class is used to execute input Mips Asm Code 
 ### First you can see `pipeline_CPU_simulator.h` to understand the variable and function briefly
 ### And then see `pipeline_CPU_simulator.cpp` which include the detail about all functions
-### Last See `main.cpp` to knows about who arguments works
+### Last See `main.cpp` to knows about how arguments works
 ### The `main_without_oop.cpp` is the old version of this Project
 ### Below Fig is the pipeline_CPU_simulator Class Flowchart
 ### ![](./Flowchart.png)
