@@ -569,7 +569,7 @@ instruction pipelineCPUSimulator::WB(instruction is)
         return is;
 
     // 判斷要寫入的值是memRead or ALUresult
-    if( is.memToReg == 1 ) is.regWriteValue = is.ALUresult;
+    if( is.memToReg == 0 ) is.regWriteValue = is.ALUresult;
     else is.regWriteValue = is.memReadValue;
 
     // 確認有要寫入Reg 且寫入的Reg不為0號
@@ -588,7 +588,7 @@ void pipelineCPUSimulator::I_format(instruction *ret)
         ret->opcode = 35;   // lw
         ret->memRead = 1;   // 需要讀取mem
         ret->memWrite = 0;  // 沒有要寫入mem
-        ret->memToReg = 0;  // 寫入暫存器的值為mem讀出的
+        ret->memToReg = 1;  // 寫入暫存器的值為mem讀出的
         ret->regDst = 0;    // 寫入暫存器為rt
         ret->regWrite = 1;  // 要寫入Reg
         ret->ALUsrc = 1;    // 是對Offset做運算
@@ -640,7 +640,7 @@ void pipelineCPUSimulator::R_format( instruction *ret )
     ret->opcode = 0;    // add or sub
     ret->memRead = 0;   // 沒有要讀取Reg
     ret->memWrite = 0;  // 沒有要寫入Reg
-    ret->memToReg = 1;  // 放入Reg的值為ALU result
+    ret->memToReg = 0;  // 放入Reg的值為ALU result
     ret->regDst = 1;    // 放入的Reg為rd
     ret->regWrite = 1;  // 有要寫入Reg
     ret->ALUsrc = 0;    // ALU來源為rt
